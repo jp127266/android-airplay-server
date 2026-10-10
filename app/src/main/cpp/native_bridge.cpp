@@ -105,6 +105,8 @@ Java_io_github_jqssun_airplay_bridge_NativeBridge_nativeInit(
     if (!ctx->dnssd) {
         LOGE("dnssd_init failed: %d", dns_err);
     } else {
+        /* as uxplay.cpp does: bit 27 (legacy pairing) only when pin auth needs it; senders then skip pair-setup */
+        dnssd_set_airplay_features(ctx->dnssd, 27, requirePin ? 1 : 0);
         raop_set_dnssd(ctx->raop, ctx->dnssd);
     }
 
