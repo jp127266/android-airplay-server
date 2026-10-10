@@ -350,7 +350,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "airplay:server").apply { acquire() }
 
-        nsdManager = NsdServiceManager(this).apply { acquireMulticastLock() }
+        nsdManager = NsdServiceManager(this).apply { acquireNetworkLocks() }
 
         val hwAddr = getHwAddr()
         val keyFile = filesDir.resolve("airplay.pem").absolutePath

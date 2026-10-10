@@ -4,18 +4,29 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.util.Log
 
 class NsdServiceManager(private val ctx: Context) {
 
     private val nsdManager = ctx.getSystemService(Context.NSD_SERVICE) as NsdManager
     private var multicastLock: WifiManager.MulticastLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
     private var raopRegistration: NsdManager.RegistrationListener? = null
     private var airplayRegistration: NsdManager.RegistrationListener? = null
 
-    fun acquireMulticastLock() {
+    fun acquireNetworkLocks() {
         val wifi = ctx.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         multicastLock = wifi.createMulticastLock("airplay_mdns").apply {
+            setReferenceCounted(false)
+            acquire()
+        }
+        /* keep wifi out of power save so mdns queries are answered; high_perf is a no-op from 34,
+           where low_latency only holds while the screen is on */
+        @Suppress("DEPRECATION")
+        val mode = if (Build.VERSION.SDK_INT >= 34) WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+            else WifiManager.WIFI_MODE_FULL_HIGH_PERF
+        wifiLock = wifi.createWifiLock(mode, "airplay_wifi").apply {
             setReferenceCounted(false)
             acquire()
         }
@@ -86,6 +97,8 @@ class NsdServiceManager(private val ctx: Context) {
         unregisterAll()
         multicastLock?.release()
         multicastLock = null
+        wifiLock?.release()
+        wifiLock = null
     }
 
     companion object {
