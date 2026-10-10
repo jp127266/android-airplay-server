@@ -76,7 +76,14 @@ class AirPlayVideoPlayer(private val context: Context) {
             pendingSurface?.let { s -> it.setVideoSurface(s) }
         }
         player = p
-        p.setMediaItem(MediaItem.fromUri(location), (startPositionSeconds * 1000).toLong())
+        // throws for formats whose media3 module isn't bundled; end the session instead of crashing
+        try {
+            p.setMediaItem(MediaItem.fromUri(location), (startPositionSeconds * 1000).toLong())
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "unsupported media source: $location", e)
+            onEnded?.invoke()
+            return@post
+        }
         p.playWhenReady = true
         p.prepare()
         onPlaybackInfo?.invoke(PlaybackSnapshot(startPositionSeconds, 0f, 0f, false, true))
